@@ -32,7 +32,7 @@ namespace WaterBuoyancy
         private Vector3 voxelSize;
         private Vector3[] voxels;
 
-        protected virtual void Awake()
+        protected void Awake()
         {
             this.collider = this.GetComponent<Collider>();
             this.rigidbody = this.GetComponent<Rigidbody>();
@@ -47,7 +47,7 @@ namespace WaterBuoyancy
             }
         }
 
-        protected virtual void FixedUpdate()
+        protected void FixedUpdate()
         {
             if (this.water != null && this.voxels.Length > 0)
             {
@@ -72,7 +72,7 @@ namespace WaterBuoyancy
                     Vector3 finalVoxelForce = surfaceRotation * (forceAtSingleVoxel * submergedFactor);
                     this.rigidbody.AddForceAtPosition(finalVoxelForce, worldPoint);
 
-                    Debug.DrawLine(worldPoint, worldPoint + finalVoxelForce.normalized, Color.blue);
+                    //Debug.DrawLine(worldPoint, worldPoint + finalVoxelForce.normalized, Color.blue);
                 }
 
                 submergedVolume /= this.voxels.Length; // 0 - object is fully out of the water, 1 - object is fully submerged

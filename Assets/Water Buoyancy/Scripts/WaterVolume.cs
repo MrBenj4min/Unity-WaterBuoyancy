@@ -76,12 +76,8 @@ namespace WaterBuoyancy
 
         protected virtual void Awake()
         {
-            this.CacheMeshVertices();
-        }
-
-        protected virtual void Update()
-        {
-            this.CacheMeshVertices();
+            initVertices();
+            CacheMeshVertices();
         }
 
         protected virtual void OnDrawGizmosSelected()
@@ -154,17 +150,16 @@ namespace WaterBuoyancy
             }
         }
 
-        public Vector3[] GetSurroundingTrianglePolygon(Vector3 worldPoint)
+        public bool GetSurroundingTrianglePolygon(Vector3 worldPoint, ref Vector3[] trianglePolygon)
         {
             Vector3 localPoint = this.transform.InverseTransformPoint(worldPoint);
             int x = Mathf.CeilToInt(localPoint.x / this.QuadSegmentSize);
             int z = Mathf.CeilToInt(localPoint.z / this.QuadSegmentSize);
             if (x <= 0 || z <= 0 || x >= (this.Columns + 1) || z >= (this.Rows + 1))
             {
-                return null;
+                return false;
             }
 
-            Vector3[] trianglePolygon = new Vector3[3];
             if ((worldPoint - this.meshWorldVertices[this.GetIndex(z, x)]).sqrMagnitude <
                 ((worldPoint - this.meshWorldVertices[this.GetIndex(z - 1, x - 1)]).sqrMagnitude))
             {
@@ -178,7 +173,7 @@ namespace WaterBuoyancy
             trianglePolygon[1] = this.meshWorldVertices[this.GetIndex(z - 1, x)];
             trianglePolygon[2] = this.meshWorldVertices[this.GetIndex(z, x - 1)];
 
-            return trianglePolygon;
+            return true;
         }
 
         public Vector3[] GetClosestPointsOnWaterSurface(Vector3 worldPoint, int pointsCount)
@@ -198,20 +193,19 @@ namespace WaterBuoyancy
             return closestPoints;
         }
 
+        Vector3[] m_meshPolygon = new Vector3[3];
+
         public Vector3 GetSurfaceNormal(Vector3 worldPoint)
         {
-            Vector3[] meshPolygon = this.GetSurroundingTrianglePolygon(worldPoint);
-            if (meshPolygon != null)
+            if (GetSurroundingTrianglePolygon(worldPoint, ref m_meshPolygon))
             {
-                Vector3 planeV1 = meshPolygon[1] - meshPolygon[0];
-                Vector3 planeV2 = meshPolygon[2] - meshPolygon[0];
+                Vector3 planeV1 = m_meshPolygon[1] - m_meshPolygon[0];
+                Vector3 planeV2 = m_meshPolygon[2] - m_meshPolygon[0];
                 Vector3 planeNormal = Vector3.Cross(planeV1, planeV2).normalized;
                 if (planeNormal.y < 0f)
                 {
                     planeNormal *= -1f;
                 }
-
-                return planeNormal;
             }
 
             return this.transform.up;
@@ -219,11 +213,10 @@ namespace WaterBuoyancy
 
         public float GetWaterLevel(Vector3 worldPoint)
         {
-            Vector3[] meshPolygon = this.GetSurroundingTrianglePolygon(worldPoint);
-            if (meshPolygon != null)
+            if (GetSurroundingTrianglePolygon(worldPoint, ref m_meshPolygon))
             {
-                Vector3 planeV1 = meshPolygon[1] - meshPolygon[0];
-                Vector3 planeV2 = meshPolygon[2] - meshPolygon[0];
+                Vector3 planeV1 = m_meshPolygon[1] - m_meshPolygon[0];
+                Vector3 planeV2 = m_meshPolygon[2] - m_meshPolygon[0];
                 Vector3 planeNormal = Vector3.Cross(planeV1, planeV2).normalized;
                 if (planeNormal.y < 0f)
                 {
@@ -231,7 +224,7 @@ namespace WaterBuoyancy
                 }
 
                 // Plane equation
-                float yOnWaterSurface = (-(worldPoint.x * planeNormal.x) - (worldPoint.z * planeNormal.z) + Vector3.Dot(meshPolygon[0], planeNormal)) / planeNormal.y;
+                float yOnWaterSurface = (-(worldPoint.x * planeNormal.x) - (worldPoint.z * planeNormal.z) + Vector3.Dot(m_meshPolygon[0], planeNormal)) / planeNormal.y;
                 //Vector3 pointOnWaterSurface = new Vector3(point.x, yOnWaterSurface, point.z);
                 //DebugUtils.DrawPoint(pointOnWaterSurface, Color.magenta);
 
@@ -251,21 +244,23 @@ namespace WaterBuoyancy
             return row * (this.Columns + 1) + column;
         }
 
-        private void CacheMeshVertices()
+        private void initVertices()
         {
-            this.meshLocalVertices = this.Mesh.vertices;
-            this.meshWorldVertices = this.ConvertPointsToWorldSpace(meshLocalVertices);
+            meshLocalVertices = this.Mesh.vertices;
+            meshWorldVertices = new Vector3[meshLocalVertices.Length];
         }
 
-        private Vector3[] ConvertPointsToWorldSpace(Vector3[] localPoints)
+        private void CacheMeshVertices()
         {
-            Vector3[] worldPoints = new Vector3[localPoints.Length];
+            ConvertPointsToWorldSpace(meshLocalVertices, ref meshWorldVertices);
+        }
+
+        private void ConvertPointsToWorldSpace(Vector3[] localPoints, ref Vector3[] worldPoints)
+        {
             for (int i = 0; i < localPoints.Length; i++)
             {
-                worldPoints[i] = this.transform.TransformPoint(localPoints[i]);
+                worldPoints[i] = transform.TransformPoint(localPoints[i]);
             }
-
-            return worldPoints;
         }
 
         private class Vector3HorizontalDistanceComparer : IComparer<Vector3>
