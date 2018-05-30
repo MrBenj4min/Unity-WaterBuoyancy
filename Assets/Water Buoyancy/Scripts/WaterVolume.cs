@@ -187,23 +187,6 @@ namespace WaterBuoyancy
             return true;
         }
 
-        private Vector3[] GetClosestPointsOnWaterSurface(Vector3 worldPoint, int pointsCount)
-        {
-            MinHeap<Vector3> allPoints = new MinHeap<Vector3>(new Vector3HorizontalDistanceComparer(worldPoint));
-            for (int i = 0; i < this.meshWorldVertices.Length; i++)
-            {
-                allPoints.Add(this.meshWorldVertices[i]);
-            }
-
-            Vector3[] closestPoints = new Vector3[pointsCount];
-            for (int i = 0; i < closestPoints.Length; i++)
-            {
-                closestPoints[i] = allPoints.Remove();
-            }
-
-            return closestPoints;
-        }
-
         Vector3[] m_meshPolygon = new Vector3[3];
 
         public Vector3 GetSurfaceNormal(Vector3 worldPoint)
@@ -273,37 +256,6 @@ namespace WaterBuoyancy
             for (int i = 0; i < localPoints.Count; i++)
             {
                 worldPoints[i] = transform.TransformPoint(localPoints[i]);
-            }
-        }
-
-        private class Vector3HorizontalDistanceComparer : IComparer<Vector3>
-        {
-            private Vector3 distanceToVector;
-
-            public Vector3HorizontalDistanceComparer(Vector3 distanceTo)
-            {
-                this.distanceToVector = distanceTo;
-            }
-
-            public int Compare(Vector3 v1, Vector3 v2)
-            {
-                v1.y = 0;
-                v2.y = 0;
-                float v1Distance = (v1 - distanceToVector).sqrMagnitude;
-                float v2Distance = (v2 - distanceToVector).sqrMagnitude;
-
-                if (v1Distance < v2Distance)
-                {
-                    return -1;
-                }
-                else if (v1Distance > v2Distance)
-                {
-                    return 1;
-                }
-                else
-                {
-                    return 0;
-                }
             }
         }
     }
