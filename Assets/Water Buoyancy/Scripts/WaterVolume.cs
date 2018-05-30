@@ -22,11 +22,14 @@ namespace WaterBuoyancy
         [SerializeField]
         private float quadSegmentSize = 1f;
 
+        [SerializeField]
+        private bool autoUpdateWaterMesh = true;
+
         //[SerializeField]
         //private Transform debugTrans; // Only for debugging
 
         private Mesh mesh;
-        private Vector3[] meshLocalVertices;
+        private List<Vector3> meshLocalVertices;
         private Vector3[] meshWorldVertices;
 
         public float Density
@@ -74,13 +77,13 @@ namespace WaterBuoyancy
             }
         }
 
-        protected virtual void Awake()
+        private void Awake()
         {
             initVertices();
-            CacheMeshVertices();
+            updateMeshWorldVertices();
         }
 
-        protected virtual void OnDrawGizmosSelected()
+        private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.green;
             Gizmos.matrix = this.transform.localToWorldMatrix;
@@ -88,7 +91,7 @@ namespace WaterBuoyancy
             Gizmos.DrawWireCube(this.GetComponent<BoxCollider>().center, this.GetComponent<BoxCollider>().size);
         }
 
-        protected virtual void OnDrawGizmos()
+        private void OnDrawGizmos()
         {
             if (!Application.isPlaying)
             {
@@ -150,7 +153,15 @@ namespace WaterBuoyancy
             }
         }
 
-        public bool GetSurroundingTrianglePolygon(Vector3 worldPoint, ref Vector3[] trianglePolygon)
+        private void Update()
+        {
+            if (autoUpdateWaterMesh == false)
+                return;
+
+            updateMeshWorldVertices();
+        }
+
+        private bool GetSurroundingTrianglePolygon(Vector3 worldPoint, ref Vector3[] trianglePolygon)
         {
             Vector3 localPoint = this.transform.InverseTransformPoint(worldPoint);
             int x = Mathf.CeilToInt(localPoint.x / this.QuadSegmentSize);
@@ -176,7 +187,7 @@ namespace WaterBuoyancy
             return true;
         }
 
-        public Vector3[] GetClosestPointsOnWaterSurface(Vector3 worldPoint, int pointsCount)
+        private Vector3[] GetClosestPointsOnWaterSurface(Vector3 worldPoint, int pointsCount)
         {
             MinHeap<Vector3> allPoints = new MinHeap<Vector3>(new Vector3HorizontalDistanceComparer(worldPoint));
             for (int i = 0; i < this.meshWorldVertices.Length; i++)
@@ -234,7 +245,7 @@ namespace WaterBuoyancy
             return this.transform.position.y;
         }
 
-        public bool IsPointUnderWater(Vector3 worldPoint)
+        private bool IsPointUnderWater(Vector3 worldPoint)
         {
             return this.GetWaterLevel(worldPoint) - worldPoint.y > 0f;
         }
@@ -246,18 +257,20 @@ namespace WaterBuoyancy
 
         private void initVertices()
         {
-            meshLocalVertices = this.Mesh.vertices;
-            meshWorldVertices = new Vector3[meshLocalVertices.Length];
+            meshLocalVertices = new List<Vector3>(Mesh.vertexCount);
+            Mesh.GetVertices(meshLocalVertices);
+            meshWorldVertices = new Vector3[meshLocalVertices.Count];
         }
 
-        private void CacheMeshVertices()
+        private void updateMeshWorldVertices()
         {
+            Mesh.GetVertices(meshLocalVertices);
             ConvertPointsToWorldSpace(meshLocalVertices, ref meshWorldVertices);
         }
 
-        private void ConvertPointsToWorldSpace(Vector3[] localPoints, ref Vector3[] worldPoints)
+        private void ConvertPointsToWorldSpace(List<Vector3> localPoints, ref Vector3[] worldPoints)
         {
-            for (int i = 0; i < localPoints.Length; i++)
+            for (int i = 0; i < localPoints.Count; i++)
             {
                 worldPoints[i] = transform.TransformPoint(localPoints[i]);
             }
