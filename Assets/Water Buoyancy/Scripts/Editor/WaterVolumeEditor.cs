@@ -14,6 +14,7 @@ namespace WaterBuoyancy
         private SerializedProperty columns;
         private SerializedProperty quadSegmentSize;
         //private SerializedProperty debugTrans;
+        private SerializedProperty autoUpdateWaterMesh;
 
         [MenuItem("Water Bouyancy/Create Water Mesh")]
         private static void CreateMesh()
@@ -30,6 +31,7 @@ namespace WaterBuoyancy
             this.rows = this.serializedObject.FindProperty("rows");
             this.columns = this.serializedObject.FindProperty("columns");
             this.quadSegmentSize = this.serializedObject.FindProperty("quadSegmentSize");
+            this.autoUpdateWaterMesh = this.serializedObject.FindProperty("autoUpdateWaterMesh");
             //this.debugTrans = this.serializedObject.FindProperty("debugTrans");
 
             Undo.undoRedoPerformed += this.OnUndoRedoPerformed;
@@ -50,6 +52,7 @@ namespace WaterBuoyancy
             EditorGUILayout.PropertyField(this.rows);
             EditorGUILayout.PropertyField(this.columns);
             EditorGUILayout.PropertyField(this.quadSegmentSize);
+            EditorGUILayout.PropertyField(this.autoUpdateWaterMesh);
             if (EditorGUI.EndChangeCheck())
             {
                 this.rows.intValue = Mathf.Max(1, this.rows.intValue);
