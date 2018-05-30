@@ -45,6 +45,8 @@ namespace WaterBuoyancy
                 float objectVolume = MathfUtils.CalculateVolume_Mesh(this.GetComponent<MeshFilter>().mesh, this.transform);
                 this.density = this.rigidbody.mass / objectVolume;
             }
+
+            this.voxels = this.CutIntoVoxels();
         }
 
         protected void FixedUpdate()
@@ -87,10 +89,6 @@ namespace WaterBuoyancy
             if (other.CompareTag(WaterVolume.TAG))
             {
                 this.water = other.GetComponent<WaterVolume>();
-                if (this.voxels == null)
-                {
-                    this.voxels = this.CutIntoVoxels();
-                }
             }
         }
 
