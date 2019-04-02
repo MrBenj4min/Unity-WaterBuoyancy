@@ -3,9 +3,6 @@ using UnityEngine;
 
 namespace WaterBuoyancy
 {
-    [RequireComponent(typeof(Collider))]
-    [RequireComponent(typeof(Rigidbody))]
-    [RequireComponent(typeof(MeshFilter))]
     public class FloatingObject : MonoBehaviour
     {
         [SerializeField]
@@ -32,17 +29,28 @@ namespace WaterBuoyancy
         private Vector3 voxelSize;
         private Vector3[] voxels;
 
+        T FindComponent<T>() where T : Component
+        {
+            T t = GetComponent<T>();
+            if (t == null)
+                return GetComponentInChildren<T>();
+            return t;
+        }
+
         protected void Awake()
         {
-            this.collider = this.GetComponent<Collider>();
-            this.rigidbody = this.GetComponent<Rigidbody>();
+            this.collider = FindComponent<Collider>();
+            this.rigidbody = FindComponent<Rigidbody>();
 
             this.initialDrag = this.rigidbody.drag;
             this.initialAngularDrag = this.rigidbody.angularDrag;
 
             if (this.calculateDensity)
             {
-                float objectVolume = MathfUtils.CalculateVolume_Mesh(this.GetComponent<MeshFilter>().mesh, this.transform);
+                MeshFilter mesh = GetComponent<MeshFilter>();
+                if (mesh == null)
+                    mesh = GetComponentInChildren<MeshFilter>();
+                float objectVolume = MathfUtils.CalculateVolume_Mesh(mesh.mesh, this.transform);
                 this.density = this.rigidbody.mass / objectVolume;
             }
 
